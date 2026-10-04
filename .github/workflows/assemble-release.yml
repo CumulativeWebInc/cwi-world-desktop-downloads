@@ -1,0 +1,37 @@
+name: Assemble Windows builds and publish release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true
+        default: 'v2.0.3-windows'
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reassemble zips from chunks
+        run: |
+          set -euo pipefail
+          cat chunks/wd203.part.* > "CWI World Desktop-2.0.3-win-portable.zip"
+          cat chunks/cd100.part.* > "CWI Command Deck-1.0.0-win-portable.zip"
+          ls -la *.zip
+          unzip -t "CWI World Desktop-2.0.3-win-portable.zip" | tail -1
+          unzip -t "CWI Command Deck-1.0.0-win-portable.zip" | tail -1
+          sha256sum *.zip
+      - name: Publish release with assembled assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: Windows builds — World Desktop 2.0.3 + Command Deck 1.0.0
+          body: |
+            Windows portable builds. Unzip and run — no installer needed.
+            - CWI World Desktop 2.0.3 (Windows portable)
+            - CWI Command Deck 1.0.0 (Windows portable)
+            Assembled inside GitHub Actions from verified chunks.
+          files: |
+            CWI World Desktop-2.0.3-win-portable.zip
+            CWI Command Deck-1.0.0-win-portable.zip
